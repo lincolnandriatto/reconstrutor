@@ -1,10 +1,9 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
-#include "iostream"
+
 #include <string>
 #include "patchOrganizerS.h"
 #include "findMatch.h"
-#include "bezier.h"
 
 using namespace PMVS3;
 using namespace Patch;
@@ -692,14 +691,7 @@ void CpatchOrganizerS::setScales(Patch::Cpatch& patch) const {
   patch.m_ascale = atan(patch.m_dscale / (unit * m_fm.m_wsize / 2.0f));
 }
 
-void valid() {
-  std::cout<<"valid"<<std::endl;
-}
-
-//Add Code
-// algoritmo para transformar RGB em HSV
-// parametro RGB na faixa de 0 a 255 e retorna HSV com H na faixa de 0 a 1.0 
-/*vector<double>*/ Vec3f rgbToHsv(double r, double g, double b)
+Vec3f rgbToHsv(double r, double g, double b)
 {
     r = r/255.0;
     g = g/255.0;
@@ -746,6 +738,72 @@ void valid() {
     return colorf; //{h / 360.0, s, v};
 }
 
+Vec3i hsvToRgb(float H, float S,float V) {
+  Vec3i color;
+  color[0] = 0;
+  color[1] = 0;
+  color[2] = 0;
+    if(H>360 || H<0 || S>100 || S<0 || V>100 || V<0) {
+        cout<<"The givem HSV values are not in valid range"<<endl;
+        return color;
+    }
+    float s = S/100;
+    float v = V/100;
+    float C = s*v;
+    float X = C*(1-abs(fmod(H/60.0, 2)-1));
+    float m = v-C;
+    float r,g,b;
+    if(H >= 0 && H < 60){
+        r = C,g = X,b = 0;
+    }
+    else if(H >= 60 && H < 120){
+        r = X,g = C,b = 0;
+    }
+    else if(H >= 120 && H < 180){
+        r = 0,g = C,b = X;
+    }
+    else if(H >= 180 && H < 240){
+        r = 0,g = X,b = C;
+    }
+    else if(H >= 240 && H < 300){
+        r = X,g = 0,b = C;
+    }
+    else{
+        r = C,g = 0,b = X;
+    }
+    int R = (r+m)*255;
+    int G = (g+m)*255;
+    int B = (b+m)*255;
+    cout<<"R : "<<R<<endl;
+    cout<<"G : "<<G<<endl;
+    cout<<"B : "<<B<<endl;
+
+    color[0] = R;
+    color[0] = G;
+    color[0] = B;
+
+    return color; //{R, G, B};
+}
+
+std::vector<double> bezier(double t, std::vector<std::vector<double> > bezierCtrlNodesArr) {
+
+    double x = 0; 
+    double y = 0;
+    std::vector<std::vector<double> > bezierCtrlNodes = bezierCtrlNodesArr;
+
+    int n = bezierCtrlNodesArr.size() - 1;
+               
+    for (int i = 0; i < bezierCtrlNodesArr.size(); i++) {
+        x += bezierCtrlNodesArr[i][0] * pow((1 - t), n - i) * pow(t, i);
+        y += bezierCtrlNodesArr[i][1] * pow((1 - t), n - i) * pow(t, i);
+    }
+
+    std::vector<double> resultList;
+    resultList.push_back(x);
+    resultList.push_back(y);
+    return resultList;
+}
+
 // write out results
 void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
                                 const std::string filename) {
@@ -768,26 +826,30 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
   vector<Ppatch>::const_iterator bpatch = patches.begin();
   vector<Ppatch>::const_iterator bend = patches.end();
 
-  map<string,Vec3f> positionsColorsMap;
-
-   int countImg = 0;
+  //type get colors 0 -> media movel
+  //type get colors 1 -> bezier
+  int typeGetColors = 1;
+  
+  int countImg = 0;
   while (bpatch != bend) {
     // Get color
     Vec3i color;
-     countImg++;
+    countImg++;
+    //std::cout<<"########cores###########"<<std::endl;
     const int mode = 0;
     // 0: color from images
     // 1: fix
     // 2: angle
     if (mode == 0) {
       int denom = 0;
+      Vec3f colorf;
+
       int maxInterval = 4;
       int countBezier = 0;
       std::vector<Vec3f> colorBezier;
 
-      Vec3f colorf;
       // if (countImg<300) {
-      //   cout<<"######## before colors ##############"<<endl;
+      //   cout<<"######## before colors xx##############"<<endl;
       // }
 
       int intervalMinMediaMovel = 4;
@@ -798,110 +860,96 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       vector<Vec3f> valuesColorsList;
       vector<int> imageId;
 
+
       for (int i = 0; i < (int)(*bpatch)->m_images.size(); ++i) {
         const int image = (*bpatch)->m_images[i];
         imageId.push_back(image);//Ids das Imagens
         colorf += m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level);
-        
+
         valuesColorsMediaMovel.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
 
         valuesColorsList.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
 
-        if (countImg<300) {
-           std::string vxx = std::to_string(12345);
-           std::cout<< "init"<< vxx <<"########coordenada: "<< (*bpatch)->m_coord <<" image"<<image<<" level "<<m_fm.m_level<<std::endl;
-        //   std::cout<<"######## color: "<<colorf<<" denom: "<<denom<<std::endl;
-        }
-
-        if (countIntervalMediaMovel < intervalMediaMovel) {
-          countIntervalMediaMovel++;
-        } else {
-          int count = 0;
-          Vec3f mediaMovel;
-          while(count<intervalMediaMovel) {
-            mediaMovel += valuesColorsMediaMovel[count];
-            //std::cout<<"######## media movel: "<< mediaMovel[0] <<endl;
-            count++;
+        if (typeGetColors == 0) {
+          if (countIntervalMediaMovel < intervalMediaMovel) {
+            countIntervalMediaMovel++;
+          } else {
+            int count = 0;
+            Vec3f mediaMovel;
+            while(count<intervalMediaMovel) {
+              mediaMovel += valuesColorsMediaMovel[count];
+              count++;
+            }
+            mediaMovel = mediaMovel/intervalMediaMovel;
+            valuesColorsResultMediaMovel.push_back(mediaMovel);
+            
+            valuesColorsMediaMovel.clear();          
+            countIntervalMediaMovel=0;
           }
-          //std::cout<<"######## media movel adicionada: "<< mediaMovel[0]<<endl;
-          mediaMovel = mediaMovel/intervalMediaMovel;
-          // std::cout<<"######## depois media movel adicionada: "<< mediaMovel[0]<<endl;
-          valuesColorsResultMediaMovel.push_back(mediaMovel);
-          
-          valuesColorsMediaMovel.clear();          
-          // std::cout<<"######## depois media movel adicionada: size "<< valuesColors.size() <<endl;
-          countIntervalMediaMovel=0;
         }
 
         denom++;
       }
 
-      //Experimento 1
-      //colorf = valuesColorsResult[valuesColorsResult.size()-1];
+      if (typeGetColors == 0) {
+        Vec3f colorSumMediaMovel;
+        for (int i=0; i< valuesColorsResultMediaMovel.size(); i++) {
+          colorSumMediaMovel += valuesColorsResultMediaMovel[i];
+        }
+        //Passa valor da média móvel para o final
+        colorf = colorSumMediaMovel/valuesColorsResultMediaMovel.size();
+      }
 
-      //Original
+      //#################Bezier Início###########################
+      if (typeGetColors == 1) {
+        int numImagens = (int)(*bpatch)->m_images.size();
+        int timeSpendMinutes = numImagens * 5;
+        float deltaT = timeSpendMinutes/numImagens;
+
+        vector<float> tPointList;
+        for (int i=0; i< numImagens;i++) {
+          tPointList.push_back(deltaT*imageId[i]);
+        }
+
+        std::vector<std::vector<double> > valuesR;
+        for (int i=0; i<numImagens; i++) {
+          std::vector<double> valueHT;
+          valueHT.push_back(valuesColorsList[i][0]);
+          valueHT.push_back(tPointList[i]);
+          valuesR.push_back(valueHT);
+        }
+
+        std::vector<std::vector<double> > valuesG;
+        for (int i=0; i<numImagens; i++) {
+          std::vector<double> valueHT;
+          valueHT.push_back(valuesColorsList[i][1]);
+          valueHT.push_back(tPointList[i]);
+          valuesG.push_back(valueHT);
+        }
+
+        std::vector<std::vector<double> > valuesB;
+        for (int i=0; i<numImagens; i++) {
+          std::vector<double> valueHT;
+          valueHT.push_back(valuesColorsList[i][2]);
+          valueHT.push_back(tPointList[i]);
+          valuesB.push_back(valueHT);
+        }            
+
+        double paramT = 0.5f;
+        std::vector<double> resultBezierR = bezier(paramT, valuesR);
+        std::vector<double> resultBezierG = bezier(paramT, valuesG);
+        std::vector<double> resultBezierB = bezier(paramT, valuesB);
+
+        colorf[0] = resultBezierR[0];
+        colorf[1] = resultBezierG[0];
+        colorf[2] = resultBezierB[0];              
+      }
+      //#################Bezier Fim ###########################
+
       // colorf /= denom;
-
-      //Média movel
-      Vec3f colorSumMediaMovel;
-      for (int i=0; i< valuesColorsResultMediaMovel.size(); i++) {
-        colorSumMediaMovel += valuesColorsResultMediaMovel[i];
-      }
-      colorf = colorSumMediaMovel/valuesColorsResultMediaMovel.size();
-
-      //Bezier Início
-      // Bezier::Bezier<4> poli({ {120, 160}, {35, 200}, {220, 260}, {220, 40}, { 210, 30} });
-      
-      //TODO: função para pegar tempo real e converter em minutos.
-      int numImagens = (int)(*bpatch)->m_images.size();
-      int timeSpendMinutes = numImagens * 5;
-      float deltaT = timeSpendMinutes/timeSpendMinutes;
-
-      vector<float> tPointList;
-      for (int i=0; i< numImagens;i++) {
-        tPointList.push_back(deltaT*imageId[i]);
-      }
-
-      vector<Vec3f> valuesColorsHsvList;
-
-      for (int i=0; i< valuesColorsList.size(); i++) {
-        Vec3f colorHsv = rgbToHsv(valuesColorsList[i][0], valuesColorsList[i][1], valuesColorsList[i][2]);
-        valuesColorsHsvList.push_back(colorHsv);
-      }      
-
-      vector<Bezier::Point> hTvaluesBezierList;
-
-      for (int i=0; i< numImagens; i++) {
-        Vec2f valueHT;
-        valueHT[0] = valuesColorsHsvList[i][0];
-        valueHT[1] = tPointList[i];
-        hTvaluesBezierList.push_back({ valuesColorsHsvList[i][0], tPointList[i] });
-      }
-      int qudList = hTvaluesBezierList.size();
-      const int numPolinomios = 1>0? 2 : 3;  //(int)hTvaluesBezierList.size();
-      Bezier::Bezier<qudList> poli({hTvaluesBezierList});
-
-      for (float i = 0.0; i < 1.0f; i+=0.1) {
-          Bezier::Point val = poli.valueAt(i);
-          std::cout << " value P: " << i << " value 0  x " << val.x << " ..."<<std::endl;
-          std::cout << " value 0 y " << val.y << " ..."<<std::endl;
-      }
-
-      float valueSelectedForPointT = 0.5; //TODO Selecionar via parametro
-      Bezier::Point valuePointT = poli.valueAt(valueSelectedForPointT);
-
-      // valuePointT.x
-
-      //Bezier Fim
-      
       color[0] = min(255,(int)floor(colorf[0] + 0.5f));
       color[1] = min(255,(int)floor(colorf[1] + 0.5f));
       color[2] = min(255,(int)floor(colorf[2] + 0.5f));
-
-      // color[0] = 0.0f; //min(255,(int)floor(colorf[0] + 0.5f));
-      // color[1] = 0.0f; //min(255,(int)floor(colorf[1] + 0.5f));
-      // color[2] = 0.0f; //min(255,(int)floor(colorf[2] + 0.5f));
-
     }
     else if (mode == 1) {
       if ((*bpatch)->m_tmp == 1.0f) {
@@ -985,53 +1033,5 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
     ++colorb;
   }
   ofstr.close();  
-}
-
-//Add code
-Vec3i HSVtoRGB(float H, float S,float V){
-  Vec3i color;
-  color[0] = 0;
-  color[1] = 0;
-  color[2] = 0;
-    if(H>360 || H<0 || S>100 || S<0 || V>100 || V<0){
-        cout<<"The givem HSV values are not in valid range"<<endl;
-        return color;
-    }
-    float s = S/100;
-    float v = V/100;
-    float C = s*v;
-    float X = C*(1-abs(fmod(H/60.0, 2)-1));
-    float m = v-C;
-    float r,g,b;
-    if(H >= 0 && H < 60){
-        r = C,g = X,b = 0;
-    }
-    else if(H >= 60 && H < 120){
-        r = X,g = C,b = 0;
-    }
-    else if(H >= 120 && H < 180){
-        r = 0,g = C,b = X;
-    }
-    else if(H >= 180 && H < 240){
-        r = 0,g = X,b = C;
-    }
-    else if(H >= 240 && H < 300){
-        r = X,g = 0,b = C;
-    }
-    else{
-        r = C,g = 0,b = X;
-    }
-    int R = (r+m)*255;
-    int G = (g+m)*255;
-    int B = (b+m)*255;
-    cout<<"R : "<<R<<endl;
-    cout<<"G : "<<G<<endl;
-    cout<<"B : "<<B<<endl;
-
-    color[0] = R;
-    color[0] = G;
-    color[0] = B;
-
-    return color; //{R, G, B};
 }
 
