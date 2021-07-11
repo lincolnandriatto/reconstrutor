@@ -835,7 +835,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
     // Get color
     Vec3i color;
     countImg++;
-    //std::cout<<"########cores###########"<<std::endl;
+
     const int mode = 0;
     // 0: color from images
     // 1: fix
@@ -848,14 +848,9 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       int countBezier = 0;
       std::vector<Vec3f> colorBezier;
 
-      // if (countImg<300) {
-      //   cout<<"######## before colors xx##############"<<endl;
-      // }
-
       int intervalMinMediaMovel = 4;
       int intervalMediaMovel = (int)(*bpatch)->m_images.size() < intervalMinMediaMovel? (int)(*bpatch)->m_images.size(): intervalMinMediaMovel;
       int countIntervalMediaMovel = 0;
-      vector<Vec3f> valuesColorsMediaMovel;
       vector<Vec3f> valuesColorsResultMediaMovel;
       vector<Vec3f> valuesColorsList;
       vector<int> imageId;
@@ -863,10 +858,8 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
 
       for (int i = 0; i < (int)(*bpatch)->m_images.size(); ++i) {
         const int image = (*bpatch)->m_images[i];
-        imageId.push_back(image);//Ids das Imagens
+        imageId.push_back(image);
         colorf += m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level);
-
-        valuesColorsMediaMovel.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
 
         valuesColorsList.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
 
@@ -877,13 +870,13 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
             int count = 0;
             Vec3f mediaMovel;
             while(count<intervalMediaMovel) {
-              mediaMovel += valuesColorsMediaMovel[count];
+              mediaMovel += valuesColorsList[count];
               count++;
             }
             mediaMovel = mediaMovel/intervalMediaMovel;
             valuesColorsResultMediaMovel.push_back(mediaMovel);
             
-            valuesColorsMediaMovel.clear();          
+            valuesColorsList.clear();          
             countIntervalMediaMovel=0;
           }
         }
@@ -900,7 +893,6 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         colorf = colorSumMediaMovel/valuesColorsResultMediaMovel.size();
       }
 
-      //#################Bezier Início###########################
       if (typeGetColors == 1) {
         int numImagens = (int)(*bpatch)->m_images.size();
         int timeSpendMinutes = numImagens * 5;
@@ -944,7 +936,6 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         colorf[1] = resultBezierG[0];
         colorf[2] = resultBezierB[0];              
       }
-      //#################Bezier Fim ###########################
 
       // colorf /= denom;
       color[0] = min(255,(int)floor(colorf[0] + 0.5f));
