@@ -785,6 +785,14 @@ Vec3i hsvToRgb(float H, float S,float V) {
     return color; //{R, G, B};
 }
 
+int factorial(int num) {
+    if (num <= 1) {
+        return 1;
+    } else {
+        return num * factorial(num - 1);
+    }
+}
+
 std::vector<double> bezier(double t, std::vector<std::vector<double> > bezierCtrlNodesArr) {
 
     double x = 0; 
@@ -794,8 +802,13 @@ std::vector<double> bezier(double t, std::vector<std::vector<double> > bezierCtr
     int n = bezierCtrlNodesArr.size() - 1;
                
     for (int i = 0; i < bezierCtrlNodesArr.size(); i++) {
+       if(!i) {
         x += bezierCtrlNodesArr[i][0] * pow((1 - t), n - i) * pow(t, i);
         y += bezierCtrlNodesArr[i][1] * pow((1 - t), n - i) * pow(t, i);
+       } else {
+        x += factorial(n) / factorial(i) / factorial(n - i) * bezierCtrlNodesArr[i][0] * pow(( 1 - t ), n - i) * pow(t, i);
+        y += factorial(n) / factorial(i) / factorial(n - i) * bezierCtrlNodesArr[i][1] * pow(( 1 - t ), n - i) * pow(t, i);
+       }
     }
 
     std::vector<double> resultList;
@@ -828,6 +841,10 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
 
   //type get colors 0 -> media movel
   //type get colors 1 -> bezier
+  //type get colors 2 -> media aritimética (padrão original)
+  //type get colors 3 -> primeira imagem do ponto (padrão)
+  //type get colors 4 -> ultima imagem do ponto (padrão)
+
   int typeGetColors = 1;
   
   int countImg = 0;
@@ -851,32 +868,79 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       int intervalMinMediaMovel = 4;
       int intervalMediaMovel = (int)(*bpatch)->m_images.size() < intervalMinMediaMovel? (int)(*bpatch)->m_images.size(): intervalMinMediaMovel;
       int countIntervalMediaMovel = 0;
+      int numIntervalMediaMovel = 0;
       vector<Vec3f> valuesColorsResultMediaMovel;
       vector<Vec3f> valuesColorsList;
+      vector<Vec3f> valuesMediaMovelColorsList;
       vector<int> imageId;
 
+      vector<Vec3f> firstValue;
+      vector<Vec3f> lastValue;
+
+      vector<int> imageSortedList;
+      for (int i = 0; i < (int)(*bpatch)->m_images.size(); ++i) {
+        const int image = (*bpatch)->m_images[i];
+        imageSortedList.push_back(image);        
+      }
+      sort(imageSortedList.begin(), imageSortedList.end());
+
+      //cout << "lista ordenada Imagem size: " << imageSortedList.size() << endl;
+      for (int i=0; i < imageSortedList.size(); i++) {
+
+        //cout << " imagem Id" << imageSortedList[i] << endl;
+
+        if (i == 0) {
+          //cout << " Primeiro valor: " << imageSortedList[i] << endl;
+          firstValue.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, imageSortedList[i], m_fm.m_level));
+        }
+        if (i+1 == imageSortedList.size()) {
+          //cout << " Ultimo valor: " << imageSortedList[i] << endl;
+          lastValue.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, imageSortedList[i], m_fm.m_level));
+        }
+        Vec3f valuesColors = m_fm.m_Term_pss.getColor((*bpatch)->m_coord, imageSortedList[i], m_fm.m_level);
+        valuesColorsList.push_back(valuesColors);        
+      }
 
       for (int i = 0; i < (int)(*bpatch)->m_images.size(); ++i) {
         const int image = (*bpatch)->m_images[i];
         imageId.push_back(image);
         colorf += m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level);
+        
+        // if (i == 0) {
+        //   firstValue.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
+        // }
+        // if (i+1 == (int)(*bpatch)->m_images.size()) {
+        //   lastValue.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
+        // }
 
-        valuesColorsList.push_back(m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level));
+        Vec3f valuesColors = m_fm.m_Term_pss.getColor((*bpatch)->m_coord, image, m_fm.m_level);
+
+        //std::cout << " valuesColors[0]: " << valuesColors[0] << " valuesColors[1]: " << valuesColors[1] << " valuesColors[2]: " << valuesColors[2] << " :: " << std::endl;
+
+        //valuesColorsList.push_back(valuesColors);
+        valuesMediaMovelColorsList.push_back(valuesColors);
 
         if (typeGetColors == 0) {
-          if (countIntervalMediaMovel < intervalMediaMovel) {
+          cout << " média movel" << endl;
+          if (countIntervalMediaMovel < (intervalMediaMovel -1)) {
+            //std::cout << " countIntervalMediaMovel: "<< countIntervalMediaMovel << "intervalMediaMovel: " << intervalMediaMovel << endl;
             countIntervalMediaMovel++;
           } else {
+
+            //std::cout << "else countIntervalMediaMovel: "<< countIntervalMediaMovel << endl;
+
             int count = 0;
             Vec3f mediaMovel;
-            while(count<intervalMediaMovel) {
-              mediaMovel += valuesColorsList[count];
+            while(count<intervalMediaMovel && count<valuesMediaMovelColorsList.size()) {
+              mediaMovel += valuesMediaMovelColorsList[count];
+              numIntervalMediaMovel++;
               count++;
             }
-            mediaMovel = mediaMovel/intervalMediaMovel;
+            mediaMovel = mediaMovel/count;
+            //std::cout << " mediaMovel[0]: " << mediaMovel[0] << " mediaMovel[1]: " << mediaMovel[1] << " mediaMovel[2]: " << mediaMovel[2] <<" :: " << std::endl;
             valuesColorsResultMediaMovel.push_back(mediaMovel);
             
-            valuesColorsList.clear();          
+            valuesMediaMovelColorsList.clear();          
             countIntervalMediaMovel=0;
           }
         }
@@ -885,6 +949,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       }
 
       if (typeGetColors == 0) {
+        cout << " média movel" << endl;
         Vec3f colorSumMediaMovel;
         for (int i=0; i< valuesColorsResultMediaMovel.size(); i++) {
           colorSumMediaMovel += valuesColorsResultMediaMovel[i];
@@ -894,14 +959,17 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       }
 
       if (typeGetColors == 1) {
+        cout << " bezier" << endl;
         int numImagens = (int)(*bpatch)->m_images.size();
-        int timeSpendMinutes = numImagens * 5;
+        //int timeSpendMinutes = numImagens * 5 * 60;
+        int timeSpendMinutes = 4 * 60;
         float deltaT = timeSpendMinutes/numImagens;
 
         vector<float> tPointList;
         for (int i=0; i< numImagens;i++) {
           tPointList.push_back(deltaT*imageId[i]);
         }
+        sort(tPointList.begin(), tPointList.end());
 
         std::vector<std::vector<double> > valuesR;
         for (int i=0; i<numImagens; i++) {
@@ -927,17 +995,135 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
           valuesB.push_back(valueHT);
         }            
 
-        double paramT = 0.5f;
+        double calc = 0.0;
+        for(int i = 0; i < tPointList.size(); i++) {
+          cout << "tPointList[i]: "<< tPointList[i] << endl;
+          double ai = (tPointList[i] - tPointList[0]) / (tPointList[tPointList.size()-1] - tPointList[0]);
+          cout << " ai " << ai << endl;
+          calc += ai;
+        }
+
+        double paramT = calc/tPointList.size();//0.4f;
+
+        cout << " calc " << calc << " paramT " << paramT << "tPointList.size() " << tPointList.size() << endl;
+
         std::vector<double> resultBezierR = bezier(paramT, valuesR);
         std::vector<double> resultBezierG = bezier(paramT, valuesG);
         std::vector<double> resultBezierB = bezier(paramT, valuesB);
+
+
+        /*if (resultBezierR[0] > resultBezierB[0] && resultBezierR[0] > resultBezierG[0]) {
+          cout<< "Ajusta R, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+          resultBezierR = bezier(0.4, valuesR);
+          resultBezierG = bezier(0.4, valuesG);
+          resultBezierB = bezier(0.4, valuesB);
+          cout<< "Ajusta R, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+        }*/
+
+        // if ((resultBezierR[0] < resultBezierG[0] && resultBezierB[0] <resultBezierG[0]) 
+        //   || (resultBezierR[0] < 50 && resultBezierG[0] < 50 && resultBezierB[0] < 80)) {
+        //   float minG = resultBezierB[0];
+        //   float minDifRG = 255.0;
+        //   float minB = 255.0;
+        //   float minT = 0.0;
+        //   for (float i=0.0; i< 1.0; i +=0.1) {
+        //     cout<< "Ajusta G, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+        //     resultBezierR = bezier(i, valuesR);
+        //     resultBezierG = bezier(i, valuesG);
+        //     resultBezierB = bezier(i, valuesB);
+            
+        //     if (/*resultBezierR[0] >= resultBezierG[0] &&*/ resultBezierG[0] > resultBezierB[0]) {
+        //       minT = i;
+        //     }
+
+
+        //     cout<< "Ajusta G, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+        //   }
+
+        //   resultBezierR = bezier(minT, valuesR);
+        //   resultBezierG = bezier(minT, valuesG);
+        //   resultBezierB = bezier(minT, valuesB);
+        //   cout<< "****Ajustado G, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+
+        // }
+
+        // if (resultBezierR[0] < resultBezierB[0] && resultBezierG[0] <resultBezierB[0]) {
+
+        //   //float minB = resultBezierB[0];
+        //   // float minDifRG = 255.0;
+        //   // float minB = 255.0;
+        //   float minTB = 0.0;
+        //   for (float i=0.0; i< 1.0; i +=0.1) {
+        //     //cout<< "Ajusta B, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+        //     resultBezierR = bezier(i, valuesR);
+        //     resultBezierG = bezier(i, valuesG);
+        //     resultBezierB = bezier(i, valuesB);
+
+        //     if (/*minDifRG> (resultBezierR[0] - resultBezierG[0]) &&*/ /*resultBezierR[0] >= resultBezierG[0] &&*/ resultBezierG[0] > resultBezierB[0]) {
+        //       //minDifRG = resultBezierR[0] - resultBezierG[0];
+        //       // minB = resultBezierB[0];
+        //       minTB = i;
+        //     }
+
+        //     // if (minB>resultBezierB[0]) {
+        //     //   minB = resultBezierB[0];
+        //     //   minTB = i;
+        //     // }
+
+        //     cout<< "Ajusta B, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+        //   }
+
+        //   resultBezierR = bezier(minTB, valuesR);
+        //   resultBezierG = bezier(minTB, valuesG);
+        //   resultBezierB = bezier(minTB, valuesB);
+          
+        //   cout<< "Ajustado B, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
+
+        // }        
+
+        cout<< "paramT:"<< paramT << endl;
+
+        /*if (resultBezierR[0]<10 && resultBezierG[0]<10 && resultBezierB[0]<10) {
+          
+          cout<< "bezier valuesR:"<< resultBezierR[0] << endl;
+          cout<< "bezier valuesG:"<< resultBezierG[0] << endl;
+          cout<< "bezier valuesB:"<< resultBezierB[0] << endl;
+
+          cout << " deltaT " << deltaT << endl;
+
+          for (int i=0; i< valuesR.size(); i++) {
+            //for (int j=0; j< valuesR[i].size(); j++) {
+              
+              cout<< " imageId: "<< imageId[i] << "tPointList: " << tPointList[i] <<endl;
+
+              cout<< " valuesR: "<< valuesR[i][0] << " tpoints: " << valuesR[i][1] << endl;
+              cout<< " valuesG: "<< valuesG[i][0] << " tpoints: " << valuesR[i][1] << endl;
+              cout<< " valuesB: "<< valuesB[i][0] << " tpoints: " << valuesR[i][1] << endl;
+            //}
+          }
+
+        }*/
 
         colorf[0] = resultBezierR[0];
         colorf[1] = resultBezierG[0];
         colorf[2] = resultBezierB[0];              
       }
 
-      // colorf /= denom;
+      if (typeGetColors == 2) {
+        cout << " média aritimética" << endl;
+        colorf /= denom;
+      }
+
+      if (typeGetColors == 3) {
+        cout << "Primeiro valor, size: " << firstValue.size() << endl;
+        colorf = firstValue[0];
+      }
+
+      if (typeGetColors == 4) {
+        cout << "Ultimo valor, size: "<< lastValue.size() << endl;
+        colorf = lastValue[0];
+      }      
+      
       color[0] = min(255,(int)floor(colorf[0] + 0.5f));
       color[1] = min(255,(int)floor(colorf[1] + 0.5f));
       color[2] = min(255,(int)floor(colorf[2] + 0.5f));
@@ -955,7 +1141,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       }
     }
     else if (mode == 2) {
-      float angle = 0.0f;
+      float angle = 0.5f;
       vector<int>::iterator bimage = (*bpatch)->m_images.begin();
       vector<int>::iterator eimage = (*bpatch)->m_images.end();
 
@@ -1025,4 +1211,3 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
   }
   ofstr.close();  
 }
-
