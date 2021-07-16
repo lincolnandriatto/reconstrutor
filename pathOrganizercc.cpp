@@ -845,8 +845,14 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
   //type get colors 3 -> primeira imagem do ponto (padrão)
   //type get colors 4 -> ultima imagem do ponto (padrão)
 
-  int typeGetColors = 1;
+  int typeGetColors = 0;
+
+  //mediaNeighborhood = 0 //Sem média na vizinhaça
+  //mediaNeighborhood = 1 //Com média na vizinhaça
+  int mediaNeighborhood = 0;
   
+  vector<vector<double> > listValuesFile;
+
   int countImg = 0;
   while (bpatch != bend) {
     // Get color
@@ -861,11 +867,11 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       int denom = 0;
       Vec3f colorf;
 
-      int maxInterval = 4;
+      //int maxInterval = 4;
       int countBezier = 0;
       std::vector<Vec3f> colorBezier;
 
-      int intervalMinMediaMovel = 4;
+      int intervalMinMediaMovel = 2;
       int intervalMediaMovel = (int)(*bpatch)->m_images.size() < intervalMinMediaMovel? (int)(*bpatch)->m_images.size(): intervalMinMediaMovel;
       int countIntervalMediaMovel = 0;
       int numIntervalMediaMovel = 0;
@@ -878,6 +884,8 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       vector<Vec3f> lastValue;
 
       vector<int> imageSortedList;
+
+
       for (int i = 0; i < (int)(*bpatch)->m_images.size(); ++i) {
         const int image = (*bpatch)->m_images[i];
         imageSortedList.push_back(image);        
@@ -921,27 +929,45 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         valuesMediaMovelColorsList.push_back(valuesColors);
 
         if (typeGetColors == 0) {
-          cout << " média movel" << endl;
+          //cout << " média movel" << endl;
           if (countIntervalMediaMovel < (intervalMediaMovel -1)) {
             //std::cout << " countIntervalMediaMovel: "<< countIntervalMediaMovel << "intervalMediaMovel: " << intervalMediaMovel << endl;
             countIntervalMediaMovel++;
+            // numIntervalMediaMovel++;
           } else {
 
-            //std::cout << "else countIntervalMediaMovel: "<< countIntervalMediaMovel << endl;
-
-            int count = 0;
+            std::cout << "xxx else countIntervalMediaMovel: "<< countIntervalMediaMovel << " IMAGEM SIZE: " << (int)(*bpatch)->m_images.size() << endl;
+            //int count = 0;
             Vec3f mediaMovel;
-            while(count<intervalMediaMovel && count<valuesMediaMovelColorsList.size()) {
+            /*while(count<intervalMediaMovel && count<valuesMediaMovelColorsList.size()) {
               mediaMovel += valuesMediaMovelColorsList[count];
               numIntervalMediaMovel++;
               count++;
             }
-            mediaMovel = mediaMovel/count;
-            //std::cout << " mediaMovel[0]: " << mediaMovel[0] << " mediaMovel[1]: " << mediaMovel[1] << " mediaMovel[2]: " << mediaMovel[2] <<" :: " << std::endl;
+            */
+            //
+            mediaMovel = 0;
+            int intervalInit = countIntervalMediaMovel - (intervalMediaMovel-1);
+            int intervalFinish = intervalInit + intervalMediaMovel;
+
+            std::cout << " intervalInit: " << intervalInit << " finish: " << intervalFinish << "intervalMediaMovel: " << intervalMediaMovel << endl;
+
+            for(int index = intervalInit; index < intervalFinish; index++) {
+              mediaMovel += valuesMediaMovelColorsList[index];
+            }
+            mediaMovel = mediaMovel/intervalMediaMovel;
+            std::cout << " mediaMovel: " << mediaMovel << endl;
             valuesColorsResultMediaMovel.push_back(mediaMovel);
             
-            valuesMediaMovelColorsList.clear();          
-            countIntervalMediaMovel=0;
+            countIntervalMediaMovel++;
+            
+            //
+            //mediaMovel = mediaMovel/count;
+            //std::cout << " mediaMovel[0]: " << mediaMovel[0] << " mediaMovel[1]: " << mediaMovel[1] << " mediaMovel[2]: " << mediaMovel[2] <<" :: " << std::endl;
+            //valuesColorsResultMediaMovel.push_back(mediaMovel);
+            
+            //valuesMediaMovelColorsList.clear();          
+            //countIntervalMediaMovel=0;
           }
         }
 
@@ -949,7 +975,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       }
 
       if (typeGetColors == 0) {
-        cout << " média movel" << endl;
+        //cout << " média movel" << endl;
         Vec3f colorSumMediaMovel;
         for (int i=0; i< valuesColorsResultMediaMovel.size(); i++) {
           colorSumMediaMovel += valuesColorsResultMediaMovel[i];
@@ -962,7 +988,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         cout << " bezier" << endl;
         int numImagens = (int)(*bpatch)->m_images.size();
         //int timeSpendMinutes = numImagens * 5 * 60;
-        int timeSpendMinutes = 4 * 60;
+        int timeSpendMinutes = 4 * 60 * 60 * 60;
         float deltaT = timeSpendMinutes/numImagens;
 
         vector<float> tPointList;
@@ -1162,16 +1188,162 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       color[1] = (int)(g * 255.0f);
       color[2] = (int)(b * 255.0f);
     }
+
+
+    vector<double> listValuesRow;
+
+    listValuesRow.push_back((*bpatch)->m_coord[0]);
+    listValuesRow.push_back((*bpatch)->m_coord[1]);
+    listValuesRow.push_back((*bpatch)->m_coord[2]);
+
+    listValuesRow.push_back((*bpatch)->m_normal[0]);
+    listValuesRow.push_back((*bpatch)->m_normal[1]);
+    listValuesRow.push_back((*bpatch)->m_normal[2]);
+
+    listValuesRow.push_back(color[0]);
+    listValuesRow.push_back(color[1]);
+    listValuesRow.push_back(color[2]);
+
+    listValuesFile.push_back(listValuesRow);
     
-    ofstr << (*bpatch)->m_coord[0] << ' '
-          << (*bpatch)->m_coord[1] << ' '
-          << (*bpatch)->m_coord[2] << ' '
-          << (*bpatch)->m_normal[0] << ' '
-          << (*bpatch)->m_normal[1] << ' '
-          << (*bpatch)->m_normal[2] << ' '
-          << color[0] << ' ' << color[1] << ' ' << color[2] << '\n';
+    if (mediaNeighborhood == 0) {
+      ofstr << (*bpatch)->m_coord[0] << ' '
+            << (*bpatch)->m_coord[1] << ' '
+            << (*bpatch)->m_coord[2] << ' '
+            << (*bpatch)->m_normal[0] << ' '
+            << (*bpatch)->m_normal[1] << ' '
+            << (*bpatch)->m_normal[2] << ' '
+            << color[0] << ' ' << color[1] << ' ' << color[2] << '\n';
+    }
+
       ++bpatch;
   }
+
+  if (mediaNeighborhood == 1) {
+
+    //Lista //Grupo //Linha
+    vector<vector<vector<double> > > groupList;
+    for(int i = 0; i < listValuesFile.size(); i++) {
+      if (groupList.size()==0) {
+        //Grupo//Linha
+        vector<vector<double> > group;
+        group.push_back(listValuesFile[i]);
+        groupList.push_back(group);
+
+      } else {
+        bool addGroup = false;
+        for (int j=0; j < groupList.size(); j++) {
+
+          if ((groupList[j][0][0] - listValuesFile[i][0]) < 20) {
+            groupList[j].push_back(listValuesFile[i]);
+            addGroup= true;
+          }
+
+        }
+
+        if (!addGroup) {
+          vector<vector<double> > groupedValues;
+          groupedValues.push_back(listValuesFile[i]);
+          groupList.push_back(groupedValues);        
+        }
+      }
+    }
+
+    int intervalMediaMovel = 0;
+    int maxIntervalMediaMovel = 4;
+    vector <double> mediaMovelList;
+    vector <double> mediaMovelGList;
+    vector <double> mediaMovelBList;
+    vector <double> mediaMoveResultlList;
+    vector <double> mediaMoveResultlGList;
+    vector <double> mediaMoveResultlBList;
+
+    for(int i = 0; i < groupList.size(); i++) {
+      for ( int j = 0; j < groupList[i].size(); j++) {
+
+        if (intervalMediaMovel < (maxIntervalMediaMovel+intervalMediaMovel)) {
+          //Get R
+          mediaMovelList.push_back(groupList[i][j][6]);
+          mediaMovelGList.push_back(groupList[i][j][7]);
+          mediaMovelBList.push_back(groupList[i][j][8]);
+          intervalMediaMovel +=1;
+        } else {
+          int sumValuesR = 0; 
+          int sumValuesG = 0; 
+          int sumValuesB = 0; 
+          for (int k = maxIntervalMediaMovel - intervalMediaMovel; k < (maxIntervalMediaMovel + intervalMediaMovel); k++) {
+            sumValuesR += mediaMovelList[k];
+            sumValuesG += mediaMovelGList[k];
+            sumValuesB += mediaMovelBList[k];
+          }
+          mediaMoveResultlList.push_back(sumValuesR/maxIntervalMediaMovel);
+          mediaMoveResultlGList.push_back(sumValuesG/maxIntervalMediaMovel);
+          mediaMoveResultlBList.push_back(sumValuesB/maxIntervalMediaMovel);
+        }
+      }
+
+      int media = 0;
+      int mediaG = 0;
+      int mediaB = 0;
+      for(int j=0; j< mediaMoveResultlList.size();j++) {
+        media += mediaMoveResultlList[i];
+        mediaG += mediaMoveResultlGList[i];
+        mediaB += mediaMoveResultlBList[i];
+      }
+      media = media/mediaMoveResultlList.size();
+      mediaG = media/mediaMoveResultlList.size();
+      mediaB = media/mediaMoveResultlList.size();
+
+      for ( int j = 0; j < groupList[i].size(); j++) {
+        groupList[i][j][6] = media;
+        groupList[i][j][7] = mediaB;
+        groupList[i][j][8] = mediaG;
+      }
+    }
+
+    //Fim Média
+
+
+    //Carrega   valores
+    for(int i = 0; i < listValuesFile.size(); i++) {
+      for(int j = 0; j < groupList.size(); j++) {
+        bool finded = false;
+        for ( int k = 0; k < groupList[j].size(); k++) {
+          if ( listValuesFile[i][0] == groupList[j][k][0]) {
+            listValuesFile[i][6] = groupList[j][k][6];
+            listValuesFile[i][7] = groupList[j][k][7];
+            listValuesFile[i][8] = groupList[j][k][8];
+            finded = true;
+            break;
+          }
+        }
+        if (finded){
+          break;
+        }
+      }
+    }
+
+    //Escreve no arquivo
+    for(int i = 0; i < listValuesFile.size(); i++) {
+      ofstr << listValuesFile[i][0] << ' '
+            << listValuesFile[i][1] << ' '
+            << listValuesFile[i][2] << ' '
+            << listValuesFile[i][3] << ' '
+            << listValuesFile[i][4] << ' '
+            << listValuesFile[i][5] << ' '
+            << listValuesFile[i][6] << ' ' << listValuesFile[i][7] << ' ' << listValuesFile[i][8] << '\n';
+
+      // ofstr << (*bpatch)->m_coord[0] << ' '
+      //       << (*bpatch)->m_coord[1] << ' '
+      //       << (*bpatch)->m_coord[2] << ' '
+      //       << (*bpatch)->m_normal[0] << ' '
+      //       << (*bpatch)->m_normal[1] << ' '
+      //       << (*bpatch)->m_normal[2] << ' '
+      //       << color[0] << ' ' << color[1] << ' ' << color[2] << '\n';
+
+    }
+  }
+
   ofstr.close();  
 }
 
