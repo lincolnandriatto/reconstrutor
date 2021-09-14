@@ -1,0 +1,234 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+%\usepackage[latin1]{inputenc}  
+\usepackage{mathtools}
+
+     
+\sloppy
+
+\title{Visão termográfica em gráfico 3D}
+
+\author{Lincoln Rodrigues Andriatto}
+
+\address{Escola de Artes, Ciências e Humanidades -- Universidade de São Paulo (USP)\\
+  São Paulo -- SP -- Brazil
+\email{lincoln.andriatto@usp.br}
+}
+
+\begin{document} 
+
+\maketitle
+
+\begin{abstract}
+In this article, I test the reconstruction of a 3D image with thermographic vision, using a tool that uses 2D images to build in 3D. The problem addressed here is that to generate these images of something exposed to the external environment that suffers temperature variations due to weather and weather, to recreate the image in 3D you need many photos to cover all angles, which can take some hours thus having a temperature variation, generating thermographic images with different colors to be used in 3D reconstruction. The purpose of this article is to use calculations such as Moving Average and Bézier to solve this problem, creating a smoothing of the color temperature variation in the 3D image.
+%\noindent 
+ %  \textbf{Keywords}: Média Móvel, Bézier.
+
+\end{abstract}
+     
+\begin{resumo}
+Nesse artigo descreve a reconstrução de imagem em 3D com visão termográfica, por meio de ferramenta que utiliza imagens 2D para reconstruir em 3D. O problema tratado aqui é que para gerar essas imagens de algo exposto ao ambiente externo que sofre variações de temperatura devido ao clima e tempo, para recriar a imagem em 3D precisa-se de muitas fotos para cobrir todos os ângulos, o que pode levar algumas horas tendo assim uma variação de temperatura, gerando imagens termográficas com cores diferentes para ser usada na reconstrução em 3D. A proposta nesse artigo é usar cálculos como Média Móvel e Bézier para resolver esse problema, criando uma suavização na variação das cores de temperatura na imagem em 3D.
+%\noindent 
+%   \textbf{Palavras-chave}: Média Móvel, Bézier, Imagem Termográfica.
+
+\end{resumo}
+
+
+\section{Introdução}
+
+Para gerar as imagens em 3D é usado uma ferramenta de reconstrução Clustering View for Multi-view Stereo (CMVS) \cite{cmvs2}, que a partir das imagens em 2D onde é criado uma representação matemática do objeto por meio dos dados coletados dessas imagens, esse processo é chamado reconstrução \cite{comuterGraphics}. Para que seja possível criar à reconstrução em 3D é necessário tirar fotos de todos os ângulos.
+
+A reconstrução em 3 dimensões de imagens com visão termográfica é muito útil para estudos ao aplicar em algo do meio ambiente contribuindo com as pesquisas e gerando conhecimento, por exemplo, ao selecionar uma área em uma fazenda para digitalização e ter os dados da visão termográfica pode ajudar verificar pontos onde o solo é mais frio ou mais quente contribuindo assim com  mais informações que pode ajudar a tomada de decisão por meios desses dados é possível desenhar em cima da imagem reconstruída computacionalmente o desenho e planejamento do será feito naquele território analisado.
+
+\section{Métodos} \label{sec:metodos}
+
+O estudo desenvolvido para gerar imagens termográficas, foi utilizado uma câmera termográfica  FLIR SC660 para tirar fotos de uma rocha com visão termográfica, para recriar computacionalmente capturando os dados de temperatura por meio visualização termográfica. 
+Nesse experimento foi retirado 240 fotos para que fosse possível reproduzir em 3 dimensões, 120 foram fotos normais, e 120 fotos termográficas, essas imagens foram digitalizadas no formato jpeg para ser utilizadas  no CMVS  \cite{cmvs2} modificado para suportar imagens termográficas.
+
+O aplicativo reconstrutor CMVS usa fotos reais para formar uma nuvem de pontos, onde cada ponto corresponde a uma coordenada X, Y e Z. Para cada ponto possui uma ou muitas imagens onde originalmente foi utilizado uma média aritmética para obter à informação do RGB utilizado. Foi verificado uma variação brusca de cores entre pontos em devido a variação da temperatura, a câmera termográfica para pontos mais quentes a cor fica vermelha e a cor mais fria fica azul. No experimento na sessão de fotos demorou 4 horas. Para obter uma visualização da imagem termográfica usando uma solução que resulta-se uma melhor imagem do que a Média Aritmética, foi utilizado no 1º experimento Média Móvel, e no 2º experimento o cálculo de Bézier buscando uma suavização\cite{bezierThermographics}  na imagem reconstruída 3D. O uso dessas funções foram implementadas adicionalmente no código no CMVS.
+
+\subsection{Média Móvel}
+Para cada ponto da nuvem de pontos existe uma ou muitas imagens aplicando a Média Móvel com a variação 4 períodos prévios, através da Média Móvel foi gerado um novo vetor de valores, onde é aplicado a média aritmética essa média é aplicada para cada um dos valores do RGB, após esse cálculo tem o valor de uma única coordenada correspondente a uma posição X, Y e Z.
+
+\subsection{Bézier}
+Foi feito também o experimento com cálculo de Bézier \cite{computacaoGrafica}, onde cada coordenada X, Y e Z da imagem é obtido o número total de fotos carregadas para aquele ponto obtém-se o RGB e para cada um dos componentes o R, G e B é tratado individualmente. Ao obter o valor de RGB cada valor dele é usado como ponto de controle para gerar o polinômio de Bézier, o valor de R  é representado pelo eixo X, o eixo Y corresponde ao intervalo de tempo gasto para obter a imagem. Depois de aplicado o cálculo de Bézier para R é feito equivalente para G e depois o B, sendo o eixo Y igual para todos. 
+
+%\begin{figure}[!ht]
+%       \centering
+ %     \includegraphics[width=.5\textwidth]{bezier/bezier1.png}
+ %\caption{Média aritmética}
+ %      \label{fig:figura1minipg}
+%\end{figure}
+
+Para se obter o tempo gasto de cada imagem é usado seguinte cálculo:
+\begin{equation}
+{\Delta}t = \frac{HF – HI}{N}
+\end{equation}
+
+\begin{equation}
+Timg = {\Delta t} * IdImg
+\end{equation}
+
+${\Delta t}$ =  tempo médio gasto no intervalo de cada foto, 
+HF = Hora final da sessão de fotos, 
+HI = Hora Inicial da sessão de fotos, 
+N = Número total de fotos, 
+Timg = Tempo correspondente para cada imagem, 
+IdImg = Id da imagem, corresponde ao que foi tirado a foto, exemplo primeira foto Id 1, segunda foto Id 2 e assim sucessivamente.\\
+Após obter o ${\Delta t}$  é feito o cálculo para obter o Timg através da multiplicação ${\Delta t}$ * IdImg, a partir do valor Timg correspondente a cada imagem tem-se o vetor de valores de tempo que corresponderá ao eixo Y combinando com X obtido pelos valores de R do RGB.
+Os valores de R tem uma variação de 0 a 255 o valor de Y tem uma variação correspondente ao número de imagem e tempo gasto para se obter essas imagens.
+Após ter a lista de valores de Timg correspondente a cada imagem essa lista é usado cálculo de normalização que para cada item corresponderá a um valor no range de 0 à 1, gerando assim uma lista com valores normalizados, usando a seguinte fórmula:
+
+\begin {equation}
+Ai = \frac{Timg – TF}{TF-TI}
+\end {equation}
+
+\begin {equation}
+ t = \sum \frac {Ai}{n}
+\end {equation}
+Na equação (3) obtêm-se dados normalizados o  
+TI = Tempo inicial, 
+TF = Tempo final, 
+Ai = tempo da imagem depois do processo de normalização no range de 0 a 1, 
+t = Parâmetro de tempo, que varia de 0 à 1 que é utilizado no Bézier.\\
+O valor \textit{t} obtido na equação (4) é usado na equação (5) do Bézier conforme abaixo:
+
+\begin{equation}
+P(t)=\sum^n_{i=0} P_i J_n,i (t) 0<=t<=1
+\end{equation}
+
+Na equação (5) P contém os valores dos pontos de controle da função de Bézier, no caso os valores do eixo X e Y, o eixo X sendo valores de R do RGB e Y os valores de tempo obtido pelo Timg onde cada imagem tem o tempo correspondente.
+
+Abaixo parâmetro \textit{t} usado  na equação (6) é obtido pela equação (4) descrita acima e \textit{n} é o grau de polinômios.
+
+\begin{equation}
+ J_{n,i} (t) = \binom{n}{i} t^i (1-t)^{n-i}
+\end{equation}
+
+\begin{equation}
+\binom{n}{i} = \frac{n!}{i!(n-i)!}
+\end{equation}
+
+Esse cálculo citado é feito para o R do RGB depois é feito igualmente somente para G e depois para B, o retorno desses valores é aplicado a cada uma das coordenadas X, Y e Z da imagem para reconstrução da nuvem de pontos.
+
+\subsection{Processamento de imagem no CMVS}
+Para cada ponto da imagem processada no CMVS há uma ou muitas imagens, foi realizado teste usando somente a primeira imagem para cada ponto e comparado com Bézier com parâmetro t = 0, para verificação da validação da implementação do Bézier e as imagens foram geradas semelhantes conforme abaixo:\\
+
+\begin{figure}[!ht]
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=.8\textwidth]{img2/aritimeticaImg0SemPoisson_3.png} 
+	(A)
+        \label{fig:figura1minipg}
+    \end{minipage}\hfill
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=.8\textwidth]{img2/bezierT0SemPoisson_3.png}
+	(B)
+        \label{fig:figura2minipg}
+    \end{minipage}
+    \caption{A imagem (A) reconstruída usando somente a primeira imagem de cada ponto, a imagem (B) foi reconstruída usando Bézier com parâmetro t = 0}
+    \label{fig:figurasminipg}
+\end{figure}
+
+Depois foi gerado a reconstrução usando a última imagem de cada ponto e comparado com  imagem gerada com Bézier usando parâmetro t = 1 para comparação e validação do Bézier, com a implementação correta devem gerar imagens semelhantes:\\
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=.7\textwidth]{img2/aritimeticaImgLastSemPoisson_3.png} 
+        %\caption{Útima imagem}
+	(C)
+        \label{fig:figura1minipg}
+    \end{minipage}\hfill
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=.7\textwidth]{img2/bezierT1SemPoisson_3.png}
+        %\caption{Bézier T = 1}
+        (D)
+         \label{fig:figura2minipg}
+    \end{minipage}
+    \caption{A imagem (C) foi gerada com a última imagem de cada ponto e a imagem (D) foi gerada com a função Bézier usando o parâmetro t = 1}
+    \label{fig:figurasminipg}
+\end{figure}
+
+Após o processo de criação da nuvem de pontos da imagens é executado processo de reconstrução por meio da ferramenta PoissonRecon \cite{poisson} fazendo uma reconstrução orientada a pontos usando a triangulação depois é usado o MeshLab, para visualização e remoção de partes da imagens excedentes.
+
+\section{Resultados}
+Após aplicar o uso da média móvel foi verificado seguintes análises de histograma para comparação do que era feito antes no caso a ferramenta por padrão usa a média aritmética para cálculo da cor para cada ponto da imagem resultante, o histograma foi gerado para o RGB de forma separada um para R, G e outro para B, segue abaixo comparação da Média Aritmética com Bézier e Média Móvel:
+
+\begin{figure}
+\centering
+\includegraphics[width=.9\textwidth]{img2/hist/histR.png}
+\caption{Comparação das cores entre à Média Aritmética, Média Móvel e Bézier}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=.9\textwidth]{img2/hist/histG.png}
+\caption{Comparação das cores entre à Média Aritmética, Média Móvel e Bézier}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=.9\textwidth]{img2/hist/histB.png}
+\caption{Comparação das cores entre à Média Aritmética, Média Móvel e Bézier}
+\end{figure}
+
+\subsection {Imagens Termográficas}
+Segue abaixo as imagens termográficas geradas no experimento:\\
+
+%--------------
+
+\begin{figure}[!ht]
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=.7\textwidth]{img2/v2.1/p_media_aritimetica_2.1.png}
+        \caption{Média aritmética}
+
+        \label{fig:figura1minipg}
+    \end{minipage}\\
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=.7\textwidth]{img2/v2.1/p_media_movel_2.1.png}
+        \caption{Média móvel}
+         \label{fig:figura2minipg}
+    \end{minipage}\\
+
+    \begin{minipage}{0.5\textwidth}
+        \centering
+       \includegraphics[width=.7\textwidth]{img2/v2.1/p_bezier_2.1.png}
+        \caption{Bézier}
+         \label{fig:figura2minipg}
+    \end{minipage}
+
+    %\caption{A imagem (C) foi gerada com a ultima imagem de cada ponto e a imagem (D) foi gerada com a função Bézier usando o parâmetro t = 1}
+    \label{fig:figurasminipg}
+\end{figure}
+
+%------------
+
+ As imagens das figuras 6, 7 e 8 mostram após o processo de triangulação no Poisson \cite{poisson}, foi verificado no experimento que com uso da Média Móvel gerou uma imagem mais suavizada nas cores, com Bézier teve  um realce nas diferenças da imagem.\\
+O tempo de reconstrução varia conforme a imagem a ser reconstruída, as imagens da figura 6, 7 e 8 demoraram cerca de 1,5 hs (2,59 GHz I7 10750H).
+O uso do Poisson nesta abordagem de reconstrução de superfície realiza um bom preenchimento de buracos onde nenhuma cena
+geometria é estimada, o preenchimento do orifício pode se estender bem além do limite das observações. Depois de feito esse processo com Poisson é feito a etapa remoção das partes exedentes não desejadas, no caso das imagens o alvo era somente a rocha tudo além disso foi removido manualmente com uso da ferramenta MeshLab.
+\section{Discussão}
+
+O uso somente da média aritmética para captura de imagens termográficas, resultava em uma imagem com variações nas cores de temperatura, com uso da média móvel no experimento a imagem gerada mostrou-se mais suavizada conforme visto nas imagens dos resultados. Com uso do Bézier no experimento ele acabou realçando mais alguns pontos que estavam em azul indicando lugares mais frios o que deixou a imagem da pedra com mais manchas ao invés de suavizar. Nos testes realizados com Bézier mostraram que com parâmetro t = 0 gerou-se uma imagem muito próxima a imagem gerada pela primeira imagem do ponto e parâmetro de t = 1 teve seu equivalente gerando uma imagem muito próxima a imagem gerada usando a última imagem de cada ponto, com a variação do parâmetro t que vai de 0 à 1 fazendo igual para cada ponto é possível gerar a imagem com a temperatura e correspondente ao tempo que foi fotografada.
+
+\section{Conclusão}
+
+Essas técnicas usadas para obter-se uma visualização melhor de imagens termográficas em 3D ajudam um pouco na questão da suavização, pois as variações térmicas no decorrer do dia podem dificultar a reconstrução das imagens capturadas, mas a inúmeras técnicas podem ser usadas para resolver esse tipo de problema, como Splines, Polinômios de interpolação, somente com essas duas técnicas usada nesse artigo permite capturar imagens maiores, como uma área agrícola, um território especifico para trazer para reconstrução em 3D e possibilitar analises e estudos.
+
+\bibliographystyle{sbc}
+\bibliography{artigoTermografia}
+
+\end{document}
