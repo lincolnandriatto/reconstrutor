@@ -5,6 +5,9 @@
 #include "patchOrganizerS.h"
 #include "findMatch.h"
 
+#include<bits/stdc++.h>
+
+
 using namespace PMVS3;
 using namespace Patch;
 using namespace std;
@@ -785,7 +788,7 @@ Vec3i hsvToRgb(float H, float S,float V) {
     return color; //{R, G, B};
 }
 
-int factorial(int num) {
+double factorial(int num) {
     if (num <= 1) {
         return 1;
     } else {
@@ -802,6 +805,8 @@ std::vector<double> bezier(double t, std::vector<std::vector<double> > bezierCtr
     int n = bezierCtrlNodesArr.size() - 1;
                
     for (int i = 0; i < bezierCtrlNodesArr.size(); i++) {
+      try {
+        std::cout << " x: " << bezierCtrlNodesArr[i][0] << " y: " << bezierCtrlNodesArr[i][1] << endl;
        if(!i) {
         x += bezierCtrlNodesArr[i][0] * pow((1 - t), n - i) * pow(t, i);
         y += bezierCtrlNodesArr[i][1] * pow((1 - t), n - i) * pow(t, i);
@@ -809,11 +814,19 @@ std::vector<double> bezier(double t, std::vector<std::vector<double> > bezierCtr
         x += factorial(n) / factorial(i) / factorial(n - i) * bezierCtrlNodesArr[i][0] * pow(( 1 - t ), n - i) * pow(t, i);
         y += factorial(n) / factorial(i) / factorial(n - i) * bezierCtrlNodesArr[i][1] * pow(( 1 - t ), n - i) * pow(t, i);
        }
+      } catch(...) {
+        std::cout << "error i: " << i << " bezierCtrlNodesArr[i][0]: " << bezierCtrlNodesArr[i][0] << " bezierCtrlNodesArr[i][1]" << bezierCtrlNodesArr[i][1] << endl;
+      }
     }
 
     std::vector<double> resultList;
+
+    try{
     resultList.push_back(x);
     resultList.push_back(y);
+    }catch(...) {
+      std::cout << "error p2 "<< endl;
+    }
     return resultList;
 }
 
@@ -843,15 +856,19 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
   //type get colors 1 -> bezier
   //type get colors 2 -> media aritimética (padrão original)
   //type get colors 3 -> primeira imagem do ponto (padrão)
-  //type get colors 4 -> ultima imagem do ponto (padrão)
+  //type get colors 4 -> última imagem do ponto (padrão)
 
-  int typeGetColors = 0;
+  int typeGetColors = 1;
 
   //mediaNeighborhood = 0 //Sem média na vizinhaça
   //mediaNeighborhood = 1 //Com média na vizinhaça
   int mediaNeighborhood = 0;
   
   vector<vector<double> > listValuesFile;
+
+  // while (bpatch != bend) {
+
+  // }
 
   int countImg = 0;
   while (bpatch != bend) {
@@ -871,7 +888,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       int countBezier = 0;
       std::vector<Vec3f> colorBezier;
 
-      int intervalMinMediaMovel = 2;
+      int intervalMinMediaMovel = 4;
       int intervalMediaMovel = (int)(*bpatch)->m_images.size() < intervalMinMediaMovel? (int)(*bpatch)->m_images.size(): intervalMinMediaMovel;
       int countIntervalMediaMovel = 0;
       int numIntervalMediaMovel = 0;
@@ -884,7 +901,6 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       vector<Vec3f> lastValue;
 
       vector<int> imageSortedList;
-
 
       for (int i = 0; i < (int)(*bpatch)->m_images.size(); ++i) {
         const int image = (*bpatch)->m_images[i];
@@ -931,12 +947,12 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         if (typeGetColors == 0) {
           //cout << " média movel" << endl;
           if (countIntervalMediaMovel < (intervalMediaMovel -1)) {
-            //std::cout << " countIntervalMediaMovel: "<< countIntervalMediaMovel << "intervalMediaMovel: " << intervalMediaMovel << endl;
+            std::cout << " countIntervalMediaMovel: "<< countIntervalMediaMovel << "intervalMediaMovel: " << intervalMediaMovel << endl;
             countIntervalMediaMovel++;
             // numIntervalMediaMovel++;
           } else {
 
-            std::cout << "xxx else countIntervalMediaMovel: "<< countIntervalMediaMovel << " IMAGEM SIZE: " << (int)(*bpatch)->m_images.size() << endl;
+            std::cout << "CountInterval MediaMovel: "<< countIntervalMediaMovel << " IMAGEM SIZE: " << (int)(*bpatch)->m_images.size() << endl;
             //int count = 0;
             Vec3f mediaMovel;
             /*while(count<intervalMediaMovel && count<valuesMediaMovelColorsList.size()) {
@@ -988,7 +1004,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         cout << " bezier" << endl;
         int numImagens = (int)(*bpatch)->m_images.size();
         //int timeSpendMinutes = numImagens * 5 * 60;
-        int timeSpendMinutes = 4 * 60 * 60 * 60;
+        int timeSpendMinutes = 60;
         float deltaT = timeSpendMinutes/numImagens;
 
         vector<float> tPointList;
@@ -997,18 +1013,32 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         }
         sort(tPointList.begin(), tPointList.end());
 
+        vector<Vec3f> valuesColorsHsvList;
+        for (int i=0; i< valuesColorsList.size(); i++) {
+          valuesColorsHsvList.push_back(rgbToHsv(valuesColorsList[i][0], valuesColorsList[i][1], valuesColorsList[i][2]));
+        }
+
         std::vector<std::vector<double> > valuesR;
         for (int i=0; i<numImagens; i++) {
           std::vector<double> valueHT;
-          valueHT.push_back(valuesColorsList[i][0]);
+          std::vector<double> valueHTHsv;
+          setprecision(2);
+
+          valueHT.push_back(round(valuesColorsList[i][0]));
+          valueHTHsv.push_back(round(valuesColorsHsvList[i][0]));
           valueHT.push_back(tPointList[i]);
           valuesR.push_back(valueHT);
+          // valuesR.push_back(valueHTHsv);
         }
 
         std::vector<std::vector<double> > valuesG;
         for (int i=0; i<numImagens; i++) {
           std::vector<double> valueHT;
-          valueHT.push_back(valuesColorsList[i][1]);
+          std::vector<double> valueHTHsv;
+          setprecision(2);
+
+          valueHT.push_back(round(valuesColorsList[i][1]));
+          valueHTHsv.push_back(round(valuesColorsHsvList[i][0]));
           valueHT.push_back(tPointList[i]);
           valuesG.push_back(valueHT);
         }
@@ -1016,26 +1046,58 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         std::vector<std::vector<double> > valuesB;
         for (int i=0; i<numImagens; i++) {
           std::vector<double> valueHT;
-          valueHT.push_back(valuesColorsList[i][2]);
+          setprecision(2);
+
+          valueHT.push_back(round(valuesColorsList[i][2]));
           valueHT.push_back(tPointList[i]);
           valuesB.push_back(valueHT);
         }            
 
         double calc = 0.0;
         for(int i = 0; i < tPointList.size(); i++) {
-          cout << "tPointList[i]: "<< tPointList[i] << endl;
+          cout << "tPointList[i]: "<< tPointList[i] << " R: " << valuesColorsList[i][0] << " G: " << valuesColorsList[i][1] << " B: " << valuesColorsList[i][2] << endl;
           double ai = (tPointList[i] - tPointList[0]) / (tPointList[tPointList.size()-1] - tPointList[0]);
           cout << " ai " << ai << endl;
           calc += ai;
         }
 
         double paramT = calc/tPointList.size();//0.4f;
+        setprecision(2);
 
-        cout << " calc " << calc << " paramT " << paramT << "tPointList.size() " << tPointList.size() << endl;
+        cout << " calc " << calc << " paramT " << paramT << " tPointList.size() " << tPointList.size() << endl;
+        
+        std::vector<double> resultBezierR;
+        std::vector<double> resultBezierG;
+        std::vector<double> resultBezierB;
 
-        std::vector<double> resultBezierR = bezier(paramT, valuesR);
-        std::vector<double> resultBezierG = bezier(paramT, valuesG);
-        std::vector<double> resultBezierB = bezier(paramT, valuesB);
+        //if (valuesR.size() <31) {
+          resultBezierR = bezier(paramT, valuesR);
+          cout << " G: " << endl;
+          resultBezierG = bezier(paramT, valuesG);
+          cout << " B: " << endl;
+          resultBezierB = bezier(paramT, valuesB);
+
+
+        /*} else {
+          std::vector<std::vector<double> > valuesR1;
+          std::vector<std::vector<double> > valuesG1;
+          std::vector<std::vector<double> > valuesB1;
+          
+          int countValuesRGB = 0;
+          for (int i=0; i<valuesR.size(); i++) {
+            countValuesRGB++;
+            if (countValuesRGB<31) {
+              valuesR1.push_back(valuesR[i]);
+            } else {
+              countValuesRGB = 0;
+              resultBezierR = bezier(paramT, valuesR1);
+              valuesR1.clear();
+              valuesR1.push_back(valuesR[i]);
+            }
+          }
+
+
+        }*/
 
 
         /*if (resultBezierR[0] > resultBezierB[0] && resultBezierR[0] > resultBezierG[0]) {
@@ -1189,7 +1251,6 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       color[2] = (int)(b * 255.0f);
     }
 
-
     vector<double> listValuesRow;
 
     listValuesRow.push_back((*bpatch)->m_coord[0]);
@@ -1220,7 +1281,8 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
   }
 
   if (mediaNeighborhood == 1) {
-
+    // int countGroup = 0;
+    // int countGroupNF = 0;
     //Lista //Grupo //Linha
     vector<vector<vector<double> > > groupList;
     for(int i = 0; i < listValuesFile.size(); i++) {
@@ -1231,23 +1293,34 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         groupList.push_back(group);
 
       } else {
+        
         bool addGroup = false;
         for (int j=0; j < groupList.size(); j++) {
+          
+          double space = groupList[j][0][0] - listValuesFile[i][0];
+          space = space < 0? space * -1: space;
 
-          if ((groupList[j][0][0] - listValuesFile[i][0]) < 20) {
-            groupList[j].push_back(listValuesFile[i]);
+          if (space < 0.0003) {
+           groupList[j].push_back(listValuesFile[i]);
             addGroup= true;
           }
 
         }
 
         if (!addGroup) {
+          // countGroupNF++;
+          // if (countGroupNF< 300) {
+          //   cout << "#############Grupo não encontrado cria: " << endl;
+          // }
+          
           vector<vector<double> > groupedValues;
           groupedValues.push_back(listValuesFile[i]);
           groupList.push_back(groupedValues);        
         }
       }
     }
+
+    cout << "1 groupList: " << groupList.size() << " first group rows: " << groupList[0].size() << " col group: " << groupList[0][0].size() << endl;
 
     int intervalMediaMovel = 0;
     int maxIntervalMediaMovel = 4;
@@ -1257,59 +1330,111 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
     vector <double> mediaMoveResultlList;
     vector <double> mediaMoveResultlGList;
     vector <double> mediaMoveResultlBList;
+    
+    int countValues = 0;
 
     for(int i = 0; i < groupList.size(); i++) {
       for ( int j = 0; j < groupList[i].size(); j++) {
 
-        if (intervalMediaMovel < (maxIntervalMediaMovel+intervalMediaMovel)) {
+        mediaMovelList.push_back(groupList[i][j][6]);
+        mediaMovelGList.push_back(groupList[i][j][7]);
+        mediaMovelBList.push_back(groupList[i][j][8]);                  
+
+        if (intervalMediaMovel < (maxIntervalMediaMovel-1)) {
+          countValues++;
+
+          if (countValues< 30) {
+            cout << " Adiciona: " << intervalMediaMovel << " maxIntervalMediaMovel+intervalMediaMovel: " << maxIntervalMediaMovel+intervalMediaMovel << " groupList[i][j][6] "<< groupList[i][j][6]<< " groupList[i][j][7] " << groupList[i][j][7] << endl;
+          }
+          
           //Get R
-          mediaMovelList.push_back(groupList[i][j][6]);
-          mediaMovelGList.push_back(groupList[i][j][7]);
-          mediaMovelBList.push_back(groupList[i][j][8]);
+
           intervalMediaMovel +=1;
         } else {
+          if (countValues< 30) {
+            cout << "..else media" << endl;
+          }
+          
           int sumValuesR = 0; 
           int sumValuesG = 0; 
           int sumValuesB = 0; 
-          for (int k = maxIntervalMediaMovel - intervalMediaMovel; k < (maxIntervalMediaMovel + intervalMediaMovel); k++) {
+
+          int initInterval = intervalMediaMovel - (maxIntervalMediaMovel-1);
+          int finishInterval = initInterval + maxIntervalMediaMovel;
+
+          if (countValues< 30) {
+            cout << " initInterval: " << initInterval << " finishInterval: " << finishInterval << endl;
+          }
+
+          for (int k = initInterval; k < finishInterval; k++) {
+
+            if (countValues< 30) {
+              cout << " mediaMovelListR: " << mediaMovelList[k] << " G: "<< mediaMovelGList[k]<< "B: "<< mediaMovelBList[k] << endl;
+            }            
+
             sumValuesR += mediaMovelList[k];
             sumValuesG += mediaMovelGList[k];
             sumValuesB += mediaMovelBList[k];
           }
-          mediaMoveResultlList.push_back(sumValuesR/maxIntervalMediaMovel);
-          mediaMoveResultlGList.push_back(sumValuesG/maxIntervalMediaMovel);
-          mediaMoveResultlBList.push_back(sumValuesB/maxIntervalMediaMovel);
+
+          int mediaR = sumValuesR/maxIntervalMediaMovel;
+          int mediaG = sumValuesG/maxIntervalMediaMovel;
+          int mediaB = sumValuesB/maxIntervalMediaMovel;
+
+          if (countValues< 30) {
+            cout << " mediaR: " << mediaR << " mediaG: " << mediaG << " mediaB " << mediaB << endl;
+          }
+          
+          
+          mediaMoveResultlList.push_back(mediaR);
+          mediaMoveResultlGList.push_back(mediaG);
+          mediaMoveResultlBList.push_back(mediaB);
+          intervalMediaMovel +=1;
         }
       }
 
-      int media = 0;
+      int mediaR = 0;
       int mediaG = 0;
       int mediaB = 0;
-      for(int j=0; j< mediaMoveResultlList.size();j++) {
-        media += mediaMoveResultlList[i];
+      for(int l=0; l< mediaMoveResultlList.size();l++) {
+        mediaR += mediaMoveResultlList[i];
         mediaG += mediaMoveResultlGList[i];
         mediaB += mediaMoveResultlBList[i];
       }
-      media = media/mediaMoveResultlList.size();
-      mediaG = media/mediaMoveResultlList.size();
-      mediaB = media/mediaMoveResultlList.size();
+      mediaR = mediaR/mediaMoveResultlList.size();
+      mediaG = mediaG/mediaMoveResultlList.size();
+      mediaB = mediaB/mediaMoveResultlList.size();
+
+      if (countValues< 30) {
+        cout << " mediaR: " << mediaR << " mediaG: " << mediaG << " mediaB " << mediaB << endl;
+      }
 
       for ( int j = 0; j < groupList[i].size(); j++) {
-        groupList[i][j][6] = media;
-        groupList[i][j][7] = mediaB;
-        groupList[i][j][8] = mediaG;
+        groupList[i][j][6] = mediaR;
+        groupList[i][j][7] = mediaG;
+        groupList[i][j][8] = mediaB;
       }
     }
 
     //Fim Média
 
-
     //Carrega   valores
+    int countVl = 0;
     for(int i = 0; i < listValuesFile.size(); i++) {
       for(int j = 0; j < groupList.size(); j++) {
         bool finded = false;
         for ( int k = 0; k < groupList[j].size(); k++) {
-          if ( listValuesFile[i][0] == groupList[j][k][0]) {
+          
+          // if (countVl < 30) {
+          //     cout << "listValuesFile[i][0] " << listValuesFile[i][0] << " groupList[j][k][0]: " << groupList[j][k][0] << endl;
+          // }
+
+          if (listValuesFile[i][0] == groupList[j][k][0]) {
+            countVl ++;
+            if (countVl < 30) {
+              cout << "finded: listValuesFile[i][0] " << listValuesFile[i][0] << " groupList[j][k][0] " << groupList[j][k][0] << (listValuesFile[i][0] == groupList[j][k][0]) << endl;
+              cout << "groupList[j][k][6]:" << groupList[j][k][6] << " groupList[j][k][7] " << groupList[j][k][7] << " groupList[j][k][8]" << groupList[j][k][8] << endl;
+            }
             listValuesFile[i][6] = groupList[j][k][6];
             listValuesFile[i][7] = groupList[j][k][7];
             listValuesFile[i][8] = groupList[j][k][8];
@@ -1323,6 +1448,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
       }
     }
 
+    cout << "write file" << endl;
     //Escreve no arquivo
     for(int i = 0; i < listValuesFile.size(); i++) {
       ofstr << listValuesFile[i][0] << ' '
