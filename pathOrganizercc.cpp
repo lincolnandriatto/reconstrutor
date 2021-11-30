@@ -1077,120 +1077,7 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
           cout << " B: " << endl;
           resultBezierB = bezier(paramT, valuesB);
 
-
-        /*} else {
-          std::vector<std::vector<double> > valuesR1;
-          std::vector<std::vector<double> > valuesG1;
-          std::vector<std::vector<double> > valuesB1;
-          
-          int countValuesRGB = 0;
-          for (int i=0; i<valuesR.size(); i++) {
-            countValuesRGB++;
-            if (countValuesRGB<31) {
-              valuesR1.push_back(valuesR[i]);
-            } else {
-              countValuesRGB = 0;
-              resultBezierR = bezier(paramT, valuesR1);
-              valuesR1.clear();
-              valuesR1.push_back(valuesR[i]);
-            }
-          }
-
-
-        }*/
-
-
-        /*if (resultBezierR[0] > resultBezierB[0] && resultBezierR[0] > resultBezierG[0]) {
-          cout<< "Ajusta R, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-          resultBezierR = bezier(0.4, valuesR);
-          resultBezierG = bezier(0.4, valuesG);
-          resultBezierB = bezier(0.4, valuesB);
-          cout<< "Ajusta R, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-        }*/
-
-        // if ((resultBezierR[0] < resultBezierG[0] && resultBezierB[0] <resultBezierG[0]) 
-        //   || (resultBezierR[0] < 50 && resultBezierG[0] < 50 && resultBezierB[0] < 80)) {
-        //   float minG = resultBezierB[0];
-        //   float minDifRG = 255.0;
-        //   float minB = 255.0;
-        //   float minT = 0.0;
-        //   for (float i=0.0; i< 1.0; i +=0.1) {
-        //     cout<< "Ajusta G, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-        //     resultBezierR = bezier(i, valuesR);
-        //     resultBezierG = bezier(i, valuesG);
-        //     resultBezierB = bezier(i, valuesB);
-            
-        //     if (/*resultBezierR[0] >= resultBezierG[0] &&*/ resultBezierG[0] > resultBezierB[0]) {
-        //       minT = i;
-        //     }
-
-
-        //     cout<< "Ajusta G, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-        //   }
-
-        //   resultBezierR = bezier(minT, valuesR);
-        //   resultBezierG = bezier(minT, valuesG);
-        //   resultBezierB = bezier(minT, valuesB);
-        //   cout<< "****Ajustado G, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-
-        // }
-
-        // if (resultBezierR[0] < resultBezierB[0] && resultBezierG[0] <resultBezierB[0]) {
-
-        //   //float minB = resultBezierB[0];
-        //   // float minDifRG = 255.0;
-        //   // float minB = 255.0;
-        //   float minTB = 0.0;
-        //   for (float i=0.0; i< 1.0; i +=0.1) {
-        //     //cout<< "Ajusta B, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-        //     resultBezierR = bezier(i, valuesR);
-        //     resultBezierG = bezier(i, valuesG);
-        //     resultBezierB = bezier(i, valuesB);
-
-        //     if (/*minDifRG> (resultBezierR[0] - resultBezierG[0]) &&*/ /*resultBezierR[0] >= resultBezierG[0] &&*/ resultBezierG[0] > resultBezierB[0]) {
-        //       //minDifRG = resultBezierR[0] - resultBezierG[0];
-        //       // minB = resultBezierB[0];
-        //       minTB = i;
-        //     }
-
-        //     // if (minB>resultBezierB[0]) {
-        //     //   minB = resultBezierB[0];
-        //     //   minTB = i;
-        //     // }
-
-        //     cout<< "Ajusta B, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-        //   }
-
-        //   resultBezierR = bezier(minTB, valuesR);
-        //   resultBezierG = bezier(minTB, valuesG);
-        //   resultBezierB = bezier(minTB, valuesB);
-          
-        //   cout<< "Ajustado B, R: "<< resultBezierR[0] << " G: " << resultBezierG[0] << " B:" << resultBezierB[0] << endl;
-
-        // }        
-
-        cout<< "paramT:"<< paramT << endl;
-
-        /*if (resultBezierR[0]<10 && resultBezierG[0]<10 && resultBezierB[0]<10) {
-          
-          cout<< "bezier valuesR:"<< resultBezierR[0] << endl;
-          cout<< "bezier valuesG:"<< resultBezierG[0] << endl;
-          cout<< "bezier valuesB:"<< resultBezierB[0] << endl;
-
-          cout << " deltaT " << deltaT << endl;
-
-          for (int i=0; i< valuesR.size(); i++) {
-            //for (int j=0; j< valuesR[i].size(); j++) {
-              
-              cout<< " imageId: "<< imageId[i] << "tPointList: " << tPointList[i] <<endl;
-
-              cout<< " valuesR: "<< valuesR[i][0] << " tpoints: " << valuesR[i][1] << endl;
-              cout<< " valuesG: "<< valuesG[i][0] << " tpoints: " << valuesR[i][1] << endl;
-              cout<< " valuesB: "<< valuesB[i][0] << " tpoints: " << valuesR[i][1] << endl;
-            //}
-          }
-
-        }*/
+	cout<< "paramT:"<< paramT << endl;
 
         colorf[0] = resultBezierR[0];
         colorf[1] = resultBezierG[0];
@@ -1308,10 +1195,6 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
         }
 
         if (!addGroup) {
-          // countGroupNF++;
-          // if (countGroupNF< 300) {
-          //   cout << "#############Grupo não encontrado cria: " << endl;
-          // }
           
           vector<vector<double> > groupedValues;
           groupedValues.push_back(listValuesFile[i]);
@@ -1458,14 +1341,6 @@ void CpatchOrganizerS::writePLY(const std::vector<Ppatch>& patches,
             << listValuesFile[i][4] << ' '
             << listValuesFile[i][5] << ' '
             << listValuesFile[i][6] << ' ' << listValuesFile[i][7] << ' ' << listValuesFile[i][8] << '\n';
-
-      // ofstr << (*bpatch)->m_coord[0] << ' '
-      //       << (*bpatch)->m_coord[1] << ' '
-      //       << (*bpatch)->m_coord[2] << ' '
-      //       << (*bpatch)->m_normal[0] << ' '
-      //       << (*bpatch)->m_normal[1] << ' '
-      //       << (*bpatch)->m_normal[2] << ' '
-      //       << color[0] << ' ' << color[1] << ' ' << color[2] << '\n';
 
     }
   }
